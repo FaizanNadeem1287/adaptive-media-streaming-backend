@@ -15,6 +15,7 @@ class UploadService:
     def __init__(self):
         self.settings = settings
         self.file_upload_path = settings.FILE_UPLOAD_PATH
+        self.hls_output_path = settings.HLS_OUTPUT_PATH
     
     async def upload_video(self, file: UploadFile) -> ApiResponse:
         """
@@ -34,7 +35,7 @@ class UploadService:
 
             logger.info("Video uploaded successfully (format: %s)", format_label)
 
-            process_video.delay(file_location, self.file_upload_path) # Background Task to start HLS conversion
+            process_video.delay(file_location, self.hls_output_path) # Background Task to start HLS conversion
             
             logger.info("Video processing started in background")
 

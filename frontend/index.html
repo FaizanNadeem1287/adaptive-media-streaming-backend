@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexus Stream - Adaptive HLS Player</title>
+    
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- HLS.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <style>
+        :root {
+            --bg-base: #0f172a;
+            --bg-surface: rgba(30, 41, 59, 0.7);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --accent: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.15), transparent 25%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--bg-surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: floatIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes floatIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 0 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .player-wrapper {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            aspect-ratio: 16 / 9;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            outline: none;
+            display: block;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .status-badge.visible {
+            opacity: 1;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        .quality-selector {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            appearance: none;
+        }
+
+        .quality-selector.visible {
+            opacity: 1;
+        }
+
+        .quality-selector option {
+            background: #1e293b;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Nexus Stream</h1>
+            <p>Adaptive HLS Video Player</p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="streamUrl" placeholder="Enter HLS .m3u8 URL here..." value="http://localhost:8080/hls/83c45af9070e49f1/master.m3u8" />
+            <button onclick="loadStream()">Play Stream</button>
+        </div>
+
+        <div class="player-wrapper">
+            <div class="status-badge" id="statusBadge">
+                <div class="live-dot"></div>
+                <span id="statusText">Disconnected</span>
+            </div>
+            <select class="quality-selector" id="qualitySelector" onchange="changeQuality(this.value)">
+                <option value="-1">Auto Quality</option>
+            </select>
+            <video id="videoPlayer" controls></video>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoPlayer');
+        const statusBadge = document.getElementById('statusBadge');
+        const statusText = document.getElementById('statusText');
+        const qualitySelector = document.getElementById('qualitySelector');
+        let hls;
+
+        function updateStatus(text, color = '#ef4444') {
+            statusBadge.classList.add('visible');
+            statusText.textContent = text;
+            statusBadge.querySelector('.live-dot').style.backgroundColor = color;
+            statusBadge.querySelector('.live-dot').style.boxShadow = `0 0 10px ${color}`;
+        }
+
+        function populateQualities() {
+            // Keep the 'Auto' option, clear the rest
+            qualitySelector.innerHTML = '<option value="-1">Auto Quality</option>';
+            
+            if (hls && hls.levels) {
+                qualitySelector.classList.add('visible');
+                hls.levels.forEach((level, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${level.height}p`;
+                    qualitySelector.appendChild(option);
+                });
+            }
+        }
+
+        function changeQuality(levelIndex) {
+            if (hls) {
+                hls.currentLevel = parseInt(levelIndex, 10);
+                console.log(`Changed quality to level: ${levelIndex}`);
+            }
+        }
+
+        function loadStream() {
+            const url = document.getElementById('streamUrl').value;
+            
+            if (!url) {
+                alert("Please enter a valid stream URL");
+                return;
+            }
+
+            // Cleanup previous HLS instance if exists
+            if (hls) {
+                hls.destroy();
+                qualitySelector.classList.remove('visible');
+            }
+
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    // Enable dynamic adaptive bitrate switching
+                    capLevelToPlayerSize: true,
+                    debug: false
+                });
+                
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    updateStatus('Streaming Connected', '#10b981'); // Green
+                    populateQualities();
+                    video.play().catch(e => console.log("Autoplay prevented:", e));
+                });
+
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) {
+                        updateStatus('Connection Failed', '#ef4444');
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.error("Network error encountered");
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.error("Media error encountered");
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                hls.destroy();
+                                break;
+                        }
+                    }
+                });
+            } 
+            // For Safari which has native HLS support
+            else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                video.addEventListener('loadedmetadata', function() {
+                    updateStatus('Native Stream Connected', '#10b981');
+                    video.play();
+                });
+                video.addEventListener('error', function() {
+                    updateStatus('Connection Failed', '#ef4444');
+                });
+            } else {
+                updateStatus('HLS Not Supported', '#ef4444');
+                alert("Your browser does not support HLS streaming.");
+            }
+        }
+    </script>
+</body>
+</html>

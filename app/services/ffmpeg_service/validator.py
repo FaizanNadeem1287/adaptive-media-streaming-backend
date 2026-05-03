@@ -46,6 +46,43 @@ _SIGNATURES: list[_MagicSignature] = [
 _MAX_READ = max(s.offset + len(s.magic) for s in _SIGNATURES)
 
 
+def validate_video_header(header: bytes) -> str:
+    """Validate that the given byte header matches a recognised video container.
+
+    Returns the detected format label (e.g. ``"MP4/MOV/M4V"``).
+
+    Raises
+    ------
+    InvalidVideoFileError
+        If the magic bytes do not match any known video format.
+    """
+    if len(header) < _MAX_READ:
+        logger.error("File too small to identify (%d bytes)", len(header))
+        raise InvalidVideoFileError(
+            "uploaded_file",
+            reason=f"file too small ({len(header)} bytes) to identify format",
+        )
+
+    for sig in _SIGNATURES:
+        start = sig.offset
+        end = start + len(sig.magic)
+        if header[start:end] == sig.magic:
+            logger.info(
+                "✔ Detected format: %s (matched at offset %d)",
+                sig.label, sig.offset,
+            )
+            return sig.label
+
+    logger.warning(
+        "No known video signature matched (header bytes: %s)",
+        header[:16].hex(),
+    )
+    raise InvalidVideoFileError(
+        "uploaded_file",
+        reason="magic bytes do not match any known video container format",
+    )
+
+
 def validate_video_file(path: str) -> str:
     """Validate that *path* exists and is a recognised video container.
 
@@ -74,28 +111,8 @@ def validate_video_file(path: str) -> str:
     with open(path, "rb") as fh:
         header = fh.read(_MAX_READ)
 
-    if len(header) < _MAX_READ:
-        logger.error("File too small to identify (%d bytes): %s", len(header), path)
-        raise InvalidVideoFileError(
-            path,
-            reason=f"file too small ({len(header)} bytes) to identify format",
-        )
-
-    for sig in _SIGNATURES:
-        start = sig.offset
-        end = start + len(sig.magic)
-        if header[start:end] == sig.magic:
-            logger.info(
-                "✔ Detected format: %s (matched at offset %d)",
-                sig.label, sig.offset,
-            )
-            return sig.label
-
-    logger.warning(
-        "No known video signature matched for: %s (header bytes: %s)",
-        path, header[:16].hex(),
-    )
-    raise InvalidVideoFileError(
-        path,
-        reason="magic bytes do not match any known video container format",
-    )
+    try:
+        return validate_video_header(header)
+    except InvalidVideoFileError as e:
+        # Re-raise with the actual path instead of "uploaded_file"
+        raise InvalidVideoFileError(path, reason=e.reason)

@@ -1,0 +1,136 @@
+# ============================================================
+#  .gitignore — FastAPI + Adaptive HLS Streaming Backend
+# ============================================================
+
+# ---------------------- Python ----------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# C extensions / Cython
+*.so
+*.c
+*.o
+
+# ---------------------- Virtual Environments ----------------------
+.venv/
+venv/
+ENV/
+env/
+.python-version
+
+# ---------------------- Distribution / Packaging ----------------------
+dist/
+build/
+*.egg-info/
+*.egg
+*.whl
+*.tar.gz
+sdist/
+develop-eggs/
+eggs/
+wheels/
+pip-wheel-metadata/
+
+# ---------------------- Environment & Secrets ----------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# ---------------------- Storage — Uploads & HLS Output ----------------------
+# Uploaded source videos (large binaries, never commit)
+storage/uploads/*
+!storage/uploads/.gitkeep
+
+# Transcoded HLS segments & manifests (generated at runtime)
+storage/hls/*
+!storage/hls/.gitkeep
+
+# Catch-all for any temp / processing dirs inside storage
+storage/tmp/
+storage/temp/
+storage/processed/
+
+# ---------------------- Media Files (safety net) ----------------------
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.m4v
+*.ts
+*.m3u8
+*.mpd
+*.m4s
+*.aac
+*.mp3
+*.wav
+*.flac
+
+# ---------------------- FFmpeg / Transcoding Artifacts ----------------------
+*.log
+ffmpeg*.log
+ffmpeg2pass-*
+*.mbtree
+
+# ---------------------- Celery / Task Queue ----------------------
+celerybeat-schedule
+celerybeat.pid
+celery*.db
+
+# ---------------------- Redis (local dump) ----------------------
+dump.rdb
+
+# ---------------------- Database ----------------------
+*.db
+*.sqlite3
+
+# ---------------------- Testing ----------------------
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+
+# ---------------------- Linting / Type Checking ----------------------
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# ---------------------- IDE / Editor ----------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ---------------------- OS Generated ----------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ---------------------- Docker (optional) ----------------------
+docker-compose.override.yml
+
+# ---------------------- Miscellaneous ----------------------
+*.bak
+*.tmp
+*.temp
+*.pid
+*.seed
+*.log.*

@@ -13,9 +13,9 @@ class Rendition(NamedTuple):
 
 # Default adaptive renditions — extend or override via the converter.
 DEFAULT_RENDITIONS: list[Rendition] = [
-    Rendition("360p",  "640:360",   "800k"),
-    Rendition("720p",  "1280:720",  "2500k"),
-    Rendition("1080p", "1920:1080", "5000k"),
+    Rendition("360p",  "-2:360",   "800k"),
+    Rendition("720p",  "-2:720",   "2500k"),
+    Rendition("1080p", "-2:1080",  "5000k"),
 ]
 
 
